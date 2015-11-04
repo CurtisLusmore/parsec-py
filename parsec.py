@@ -9,6 +9,7 @@ class Parser:
 
     def __pos__(self):
         '+self'
+        return self[1:]
 
     def __neg__(self):
         '-self'
@@ -18,12 +19,27 @@ class Parser:
 
     def __add__(self, other):
         'self + other'
+        @Parser
+        def parse(s):
+            (l, s2) = self(s)
+            if l is None:
+                return (None, s)
+            (r, s3) = other(s2)
+            if r is None:
+                return (None, s)
+            return (l + r, s3)
+        return parse
 
     def __sub__(self, other):
         'self - other'
 
-    def __mul__(self, other):
+    def __rmul__(self, f):
         'self * other'
+        @Parser
+        def parse(s):
+            (p, s) = self(s)
+            return (f(*p), s) if p is not None else (None, s)
+        return parse
 
     def __truediv__(self, other):
         'self / other'
@@ -31,8 +47,21 @@ class Parser:
     def __pow__(self, other):
         'self ** other'
 
-    def __xor__(self, f):
-        'self ^ f'
+    def __xor__(self, other):
+        'self ^ other'
+        @Parser
+        def parse(s):
+            (l, s2) = self(s)
+            if l is None:
+                return (None, s)
+            (r, s3) = other(s2)
+            if r is None:
+                return (None, s)
+            return ((l, r), s3)
+        return parse
+
+    def __le__(self, f):
+        'f >= self'
         @Parser
         def parse(s):
             (p, s) = self(s)
@@ -78,14 +107,14 @@ class Parser:
         if isinstance(ind, int):
             @Parser
             def parse(s):
-                ps = []
+                ps = ''
                 s2 = s
                 for _ in range(ind):
                     (p, s2) = self(s2)
                     if p is None:
                         return (None, s)
                     else:
-                        ps.append(p)
+                        ps += p
                 else:
                     return (ps, s2)
             return parse
@@ -103,7 +132,7 @@ class Parser:
                     (ps2, s3) = self[i](s2)
                     if ps2 is None:
                         break
-                    ps.extend(ps2)
+                    ps += ps2
                     s2 = s3
                 return (ps, s2)
             return parse
@@ -120,6 +149,16 @@ def char(c):
         return (h, t) if h is c else (None, s)
     return parse
 
+def string(cs):
+    l = len(cs)
+    @Parser
+    def parse(s):
+        if len(s) < l:
+            return (None, s)
+        (h, t) = (s[:l], s[l:])
+        return (h, t) if h == cs else (None, s)
+    return parse
+
 def oneof(cs):
     @Parser
     def parse(s):
@@ -128,5 +167,10 @@ def oneof(cs):
         return (h, t) if h in cs else (None, s)
     return parse
 
-if __name__ == '__main__':
-    print(fail ^ fail)
+def predicate(p):
+    @Parser
+    def parse(s):
+        if not s: return (None, s)
+        (h, *t) = s
+        return (h, t) if p(h) else (None, s)
+    return parse
