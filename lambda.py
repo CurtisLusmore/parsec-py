@@ -52,22 +52,22 @@ class Apply:
     def __repr__(self):
         return 'Apply(%r, %r)' % (self.e1, self.e2)
 
-space = oneof(' \t')
-spaces = +space
-whitespace = +oneof(' \t\r\n')
-
-letter = predicate(str.isalpha)
-digit = predicate(str.isnumeric)
 symbol = oneof("`~!@#$%^&*-_+|;:',/?[]<>")
 
 identifier = +(letter | digit | symbol)
+
+def curry(xs, e):
+    if not xs:
+        return e
+    (x, *xs) = xs
+    return Lambda(x, curry(xs, e))
 
 @Parser
 def parse_term(s):
     return (parse_var | parse_lambda | parse_apply)(s)
 parse_var = Var >= identifier
 parse_apply = Apply * ((char('(') >> parse_term << spaces) ^ (parse_term << char(')')))
-parse_lambda = Lambda * ((char('\\') >> identifier << spaces << char('.') << spaces) ^ parse_term)
+parse_lambda = curry * ((char('\\') >> +(identifier << spaces) << char('.') << spaces) ^ parse_term)
 
 def repl(prompt='> '):
     while True:

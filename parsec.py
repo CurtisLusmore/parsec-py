@@ -174,3 +174,9 @@ def predicate(p):
         (h, *t) = s
         return (h, t) if p(h) else (None, s)
     return parse
+
+spaces = +oneof(' \t')
+whitespace = +oneof(' \t\r\n')
+
+letter = predicate(str.isalpha)
+digit = predicate(str.isnumeric)
