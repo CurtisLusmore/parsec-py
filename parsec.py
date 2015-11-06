@@ -107,14 +107,14 @@ class Parser:
         if isinstance(ind, int):
             @Parser
             def parse(s):
-                ps = ''
+                ps = []
                 s2 = s
                 for _ in range(ind):
                     (p, s2) = self(s2)
                     if p is None:
                         return (None, s)
                     else:
-                        ps += p
+                        ps.append(p)
                 else:
                     return (ps, s2)
             return parse

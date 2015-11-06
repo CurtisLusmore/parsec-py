@@ -2,7 +2,7 @@ from parsec import *
 
 class Var:
     def __init__(self, x):
-        self.x = x
+        self.x = ''.join(x)
 
     def beta(self, x, e):
         return e if self.x == x else self
@@ -18,7 +18,7 @@ class Var:
 
 class Lambda:
     def __init__(self, x, e):
-        self.x = x
+        self.x = ''.join(x)
         self.e = e
 
     def beta(self, x, e):
@@ -56,29 +56,51 @@ symbol = oneof("`~!@#$%^&*-_+|;:',/?[]<>")
 
 identifier = +(letter | digit | symbol)
 
-def curry(xs, e):
-    if not xs:
-        return e
-    (x, *xs) = xs
-    return Lambda(x, curry(xs, e))
+def parse_form(ws):
+    @Parser
+    def parse(s):
+        return parse_apply(ws)(s)
+    return parse
 
-@Parser
-def parse_term(s):
-    return (parse_var | parse_lambda | parse_apply)(s)
+def parse_term(ws):
+    @Parser
+    def parse(s):
+        return (parse_var | parse_lambda(ws) | parse_paren)(s)
+    return parse
+
+def parse_apply(ws):
+    @Parser
+    def parse(s):
+        def fold(e, es):
+            if not es:
+                return e
+            (e2, *es) = es
+            return fold(Apply(e, e2), es)
+        return (fold * (parse_term(ws) ^ (ws >> parse_term(ws))[:]))(s)
+    return parse
+
+def parse_lambda(ws):
+    def curry(xs, e):
+        if not xs:
+            return e
+        (x, *xs) = xs
+        return Lambda(x, curry(xs, e))
+    return curry * ((char('\\') >> +(identifier << ws) << char('.') << ws) ^ parse_term(ws))
+
 parse_var = Var >= identifier
-parse_apply = Apply * ((char('(') >> parse_term << spaces) ^ (parse_term << char(')')))
-parse_lambda = curry * ((char('\\') >> +(identifier << spaces) << char('.') << spaces) ^ parse_term)
+parse_paren = char('(') >> whitespace[:] >> parse_form(whitespace) << whitespace[:] << char(')')
 
 def repl(prompt='> '):
+    import sys
     while True:
         try:
-            term = input(prompt)
+            term = sys.stdin.read()
         except EOFError:
             break
         if not term:
             break
 
-        (p, s) = parse_term(term)
+        (p, s) = parse_form(spaces)(term)
         if p is None:
             print('Failed to parse')
             continue
