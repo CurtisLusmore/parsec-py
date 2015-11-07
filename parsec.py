@@ -137,9 +137,26 @@ class Parser:
                 return (ps, s2)
             return parse
 
+    def sepby(self, sep, n=0):
+        @Parser
+        def parse(s):
+            (p, s2) = self(s)
+            if p is None:
+                return ([], s) if n == 0 else (None, s)
+            (ps, s3) = (sep >> self)[:](s2)
+            ps = [p] + ps
+            return (ps, s3) if len(ps) >= n else (None, s)
+        return parse
+
 @Parser
 def fail(s):
     return (None, s)
+
+@Parser
+def any(s):
+    if not s: return (None, s)
+    (h, *t) = s
+    return (h, t)
 
 def char(c):
     @Parser
@@ -156,7 +173,7 @@ def string(cs):
         if len(s) < l:
             return (None, s)
         (h, t) = (s[:l], s[l:])
-        return (h, t) if h == cs else (None, s)
+        return (''.join(h), t) if list(h) == list(cs) else (None, s)
     return parse
 
 def oneof(cs):
@@ -165,6 +182,14 @@ def oneof(cs):
         if not s: return (None, s)
         (h, *t) = s
         return (h, t) if h in cs else (None, s)
+    return parse
+
+def anybut(cs):
+    @Parser
+    def parse(s):
+        if not s: return (None, s)
+        (h, *t) = s
+        return (h, t) if h not in cs else (None, s)
     return parse
 
 def predicate(p):
