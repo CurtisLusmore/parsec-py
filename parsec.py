@@ -1,24 +1,46 @@
 class Parser:
+    '''
+    '''
     def __init__(self, f):
-        'Parser(f)'
+        ''' Parser(f)
+        Create a new parser that wraps the function f. The function should take
+        one argument, an iterable of tokens, and return a tuple of the parse
+        result and the remaining tokens.
+        '''
+
         self.f = f
 
     def __call__(self, s):
-        'self(s)'
+        ''' self(s)
+        Apply the parser to an iterable of tokens.
+        '''
+
         return self.f(s)
 
     def __pos__(self):
-        '+self'
+        ''' +self
+        Create a new parser which applies the given parser at least once, and
+        continues to apply it until it fails.
+        '''
+
         return self[1:]
 
     def __neg__(self):
-        '-self'
+        ''' -self
+        Unused for now.
+        '''
 
     def __invert__(self):
-        '~self'
+        ''' ~self
+        Unused for now.
+        '''
 
     def __add__(self, other):
-        'self + other'
+        ''' self + other
+        Create a new parser which applies the given parsers and adds their
+        results together. Fails if either parser fails.
+        '''
+
         @Parser
         def parse(s):
             (l, s2) = self(s)
@@ -31,10 +53,16 @@ class Parser:
         return parse
 
     def __sub__(self, other):
-        'self - other'
+        ''' self - other
+        Unused for now.
+        '''
 
     def __rmul__(self, f):
-        'self * other'
+        ''' self * other
+        Create a new parser that applies the left function operand to the list
+        of results of the right parser operand.
+        '''
+
         @Parser
         def parse(s):
             (p, s) = self(s)
@@ -42,13 +70,21 @@ class Parser:
         return parse
 
     def __truediv__(self, other):
-        'self / other'
+        ''' self / other
+        Unused for now.
+        '''
 
     def __pow__(self, other):
-        'self ** other'
+        ''' self ** other
+        Unused for now.
+        '''
 
     def __xor__(self, other):
-        'self ^ other'
+        ''' self ^ other
+        Create a new parser which applies the given parsers and returns a tuple
+        of the results. Fails if either parser fails.
+        '''
+
         @Parser
         def parse(s):
             (l, s2) = self(s)
@@ -61,7 +97,11 @@ class Parser:
         return parse
 
     def __le__(self, f):
-        'f >= self'
+        ''' f >= self
+        Create a new parser which applies the left function operand to the
+        results of the right parser operand.
+        '''
+
         @Parser
         def parse(s):
             (p, s) = self(s)
@@ -69,7 +109,11 @@ class Parser:
         return parse
 
     def __or__(self, other):
-        'self | other'
+        ''' self | other
+        Create a new parser which applies the left parser operand, or the right
+        if the left fails.
+        '''
+
         @Parser
         def parse(s):
             (p, s) = self(s)
@@ -77,7 +121,11 @@ class Parser:
         return parse
 
     def __rshift__(self, other):
-        'self >> other'
+        ''' self >> other
+        Create a new parser which applies and ignores the left parser operand
+        and then returns the result of the right parser operand.
+        '''
+
         @Parser
         def parse(s):
             (l, s2) = self(s)
@@ -90,7 +138,11 @@ class Parser:
         return parse
 
     def __lshift__(self, other):
-        'self << other'
+        ''' self << other
+        Create a new parser which applies the left parser operand and then
+        applies and ignores the right parser operand.
+        '''
+
         @Parser
         def parse(s):
             (l, s2) = self(s)
@@ -103,7 +155,10 @@ class Parser:
         return parse
 
     def __getitem__(self, ind):
-        'self[ind]'
+        ''' self[ind]
+        Create a new parser which repeatedly applies the given parser.
+        '''
+
         if isinstance(ind, int):
             @Parser
             def parse(s):
@@ -138,6 +193,11 @@ class Parser:
             return parse
 
     def sepby(self, sep, n=0):
+        ''' self.sepby(sep)
+        Create a new parser which repeatedly applies the current parser,
+        separated by application of the given parser.
+        '''
+
         @Parser
         def parse(s):
             (p, s2) = self(s)
