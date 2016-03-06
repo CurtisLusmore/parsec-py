@@ -1,6 +1,10 @@
 class Parser:
+    ''' A class representing a parser. A parser is a callable that, when
+    applied to an iterable of tokens, attempts to parse something from the
+    start of the input. Provides methods and operators for creating new parsers
+    using parser combinators.
     '''
-    '''
+
     def __init__(self, f):
         ''' Parser(f)
         Create a new parser that wraps the function f. The function should take
@@ -192,6 +196,7 @@ class Parser:
                 return (ps, s2)
             return parse
 
+
     def sepby(self, sep, n=0):
         ''' self.sepby(sep)
         Create a new parser which repeatedly applies the current parser,
@@ -208,17 +213,32 @@ class Parser:
             return (ps, s3) if len(ps) >= n else (None, s)
         return parse
 
+
 @Parser
 def fail(s):
+    ''' fail(s)
+    A parser that always fails.
+    '''
+
     return (None, s)
+
 
 @Parser
 def any(s):
+    ''' any(s)
+    A parse that accepts any token.
+    '''
+
     if not s: return (None, s)
     (h, *t) = s
     return (h, t)
 
+
 def char(c):
+    ''' char(c)
+    Create a parser that accepts a particular single token.
+    '''
+
     @Parser
     def parse(s):
         if not s: return (None, s)
@@ -226,7 +246,13 @@ def char(c):
         return (h, t) if h is c else (None, s)
     return parse
 
+
 def string(cs):
+    ''' string(cs)
+    Create a parser that accepts a particular string of tokens from the start
+    of input.
+    '''
+
     l = len(cs)
     @Parser
     def parse(s):
@@ -236,7 +262,12 @@ def string(cs):
         return (''.join(h), t) if list(h) == list(cs) else (None, s)
     return parse
 
+
 def oneof(cs):
+    ''' oneof(cs)
+    Create a parse that accepts any one of the given tokens.
+    '''
+
     @Parser
     def parse(s):
         if not s: return (None, s)
@@ -244,7 +275,12 @@ def oneof(cs):
         return (h, t) if h in cs else (None, s)
     return parse
 
+
 def anybut(cs):
+    ''' anybut(cs)
+    Create a parser that accepts any token other than one of those given.
+    '''
+
     @Parser
     def parse(s):
         if not s: return (None, s)
@@ -252,7 +288,12 @@ def anybut(cs):
         return (h, t) if h not in cs else (None, s)
     return parse
 
+
 def predicate(p):
+    ''' predicate(p)
+    Create a parser that accepts the first token if it satisfies the predicate.
+    '''
+
     @Parser
     def parse(s):
         if not s: return (None, s)
@@ -260,8 +301,17 @@ def predicate(p):
         return (h, t) if p(h) else (None, s)
     return parse
 
+'A parser that accepts any amount of space or tab characters'
 spaces = +oneof(' \t')
+
+
+'A parser that accepts any amount of space or newline characters.'
 whitespace = +oneof(' \t\r\n')
 
+
+'A parser that accepts a single alphabetic character.'
 letter = predicate(str.isalpha)
+
+
+'A parse that accepts a single digit character.'
 digit = predicate(str.isnumeric)
